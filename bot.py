@@ -225,7 +225,7 @@ async def upgrade(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 if __name__ == "__main__":
     print(">> Telegram Bot is starting...")
-    bot_token = "8062232378:AAF5GI9e70-IhEhY121rn94So74F5zPg0qU"
+    bot_token = "8062232378:AAHptyCOvgTftXu0JOJB4Md_IC9g9YfPdXA"
     app = ApplicationBuilder().token(bot_token).build()
 
     app.add_handler(CommandHandler("start", start))
