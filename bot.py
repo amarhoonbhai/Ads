@@ -1,3 +1,4 @@
+# Full version of bot.py combining all features and including startup logs
 import os
 import json
 import asyncio
@@ -107,22 +108,18 @@ async def sendall(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if not os.path.exists(session_file):
         await update.message.reply_text("No session uploaded.")
         return
-
     profile = load_user_profile(user_id)
     message = profile.get("message")
     if not message:
         await update.message.reply_text("No message set. Use /change.")
         return
-
     delay = profile.get("delay", 30)
     plan = profile.get("plan", "Basic")
     limit = plan_limits(plan)
     groups = load_groups()
-
     if len(groups) > limit["groups"]:
         await update.message.reply_text("Group limit exceeded.")
         return
-
     try:
         client = TelegramClient(session_file, 1, 'abc')
         await client.start()
@@ -274,7 +271,9 @@ async def upgrade(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text(f"Upgraded user {uid} to {plan}")
 
 if __name__ == "__main__":
-    bot_token = "8062232378:AAFFgVYZMfgRNvpnswss5t7NBQBYI8S3HaQ"
+    print(">> Telegram Bot is starting...")
+
+    bot_token = "8062232378:AAFCR4vtDxtqYTMZoyR_6md7QUR48MSkh3Q"
     app = ApplicationBuilder().token(bot_token).build()
 
     app.add_handler(CommandHandler("start", start))
@@ -290,6 +289,5 @@ if __name__ == "__main__":
     app.add_handler(CommandHandler("autostop", autostop))
     app.add_handler(MessageHandler(filters.Document.ALL, upload_session))
 
-    print("Bot running...")
+    print(">> Bot is now running. Use Ctrl+C to stop.")
     app.run_polling()
-  
