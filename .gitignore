@@ -1,4 +1,0 @@
-sessions/
-__pycache__/
-*.session
-data/*/*.session
