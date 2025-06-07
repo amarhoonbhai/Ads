@@ -6,7 +6,7 @@ from telethon import TelegramClient, events
 # === CONFIG ===
 api_id = 28464245  # 🔁 Replace with your API ID
 api_hash = '6fe23ca19e7c7870dc2aff57fb05c4d9'  # 🔁 Replace with your API hash
-session_name = 'user_session'  # Session file (e.g., user_session.session)
+session_name = 'User(id=7699253029, is_self=True, contact=False, mutual_contact=False, deleted=False, bot=True, bot_chat_history=False, bot_nochats=False, verified=False, restricted=False, min=False, bot_inline_geo=False, support=False, scam=False, apply_min_photo=True, fake=False, bot_attach_menu=False, premium=False, attach_menu_enabled=False, bot_can_edit=True, close_friend=False, stories_hidden=False, stories_unavailable=True, contact_require_premium=False, bot_business=False, bot_has_main_app=False, access_hash=-6512193603957157777, first_name='Spinify Mania', last_name=None, username='SpinifyBot', phone=None, photo=UserProfilePhoto(photo_id=6168103423023631237, dc_id=5, has_video=False, personal=False, stripped_thumb=None), status=None, bot_info_version=1, restriction_reason=[], bot_inline_placeholder=None, lang_code=None, emoji_status=None, usernames=[], stories_max_id=None, color=None, profile_color=None, bot_active_users=None, bot_verification_icon=None, send_paid_messages_stars=None)'  # Session file (e.g., user_session.session)
 owner_id = 7775062794  # 👑 Owner's Telegram user ID
 cooldown_minutes = 30
 post_delay_seconds = cooldown_minutes * 60
