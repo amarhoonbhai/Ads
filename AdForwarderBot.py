@@ -1,35 +1,37 @@
+
+from datetime import datetime
+import hashlib
+import os
+import time
 from telethon.sync import TelegramClient
 from telethon.tl.functions.messages import GetHistoryRequest
 from colorama import init, Fore, Style
-import os
-import time
-import hashlib
 
-# === INIT COLOR TERMINAL ===
+# Initialize color output
 init(autoreset=True)
 
-# === SETTINGS ===
-CYCLE_DELAY_MIN = 25        # Delay between ad rounds (in minutes)
-DELAY_BETWEEN_MSGS = 5      # Delay between each group send (in seconds)
+# Configurable settings
+CYCLE_DELAY_MIN = 25
+DELAY_BETWEEN_MSGS = 5
 LAST_HASH_FILE = "last_hash.txt"
 GROUP_FILE = "Groups.txt"
 CRED_FILE = "Credentials.txt"
+LOG_FILE = "sent.log"
 
-# === UTILS ===
 def clear_screen():
     os.system('cls' if os.name == 'nt' else 'clear')
 
 def display_banner():
-    print(Fore.CYAN + r"""
-           _                 _       
-     /\   | |               | |      
-    /  \  | | _____  __   __| |_   _ 
-   / /\ \ | |/ _ \ \/ /  / _` | | | |
-  / ____ \| |  __/>  <  | (_| | |_| |
- /_/    \_\_|\___/_/\_\  \__,_|\__,_| 
-    """)
+    print(Fore.CYAN + r'''
+     ____        _      __             _               ____        _   
+    |  _ \  __ _| |_ __/ _| ___  _ __ | |__   ___ _ __|  _ \  __ _| |_ 
+    | | | |/ _` | __|_  / / _ \| '_ \| '_ \ / _ \ '__| | | |/ _` | __|
+    | |_| | (_| | |_ / /| (_) | | | | | | |  __/ |  | |_| | (_| | |_ 
+    |____/ \__,_|\__/___|\___/|_| |_|_| |_|\___|_|  |____/ \__,_|\__|
+
+    ''')
     print(Style.RESET_ALL)
-    print(Fore.GREEN + "Auto Ad Forwarder Bot ✨\n")
+    print(Fore.GREEN + "📢 Auto Ad Forwarder Bot - Repeats until updated\n")
 
 def check_and_create_files():
     if not os.path.exists(CRED_FILE): open(CRED_FILE, 'w').close()
@@ -67,6 +69,10 @@ def save_last_hash(hash_value):
     with open(LAST_HASH_FILE, 'w') as f:
         f.write(hash_value)
 
+def log_post(content):
+    with open(LOG_FILE, 'a') as log:
+        log.write(f"{datetime.now().isoformat()} - Sent ad:\n{content}\n\n")
+
 def send_latest_saved_message(client, group_urls):
     try:
         history = client(GetHistoryRequest(
@@ -88,10 +94,10 @@ def send_latest_saved_message(client, group_urls):
         last_hash = load_last_hash()
 
         if new_hash == last_hash:
-            print(Fore.YELLOW + '[!] Skipping — no new message since last post.\n')
-            return
+            print(Fore.CYAN + '[↻] Reposting same message — no update found.\n')
         else:
-            print(Fore.GREEN + '[✔] New message found — sending to groups...\n')
+            print(Fore.GREEN + '[✔] New message detected. Updating reference hash.\n')
+            save_last_hash(new_hash)
 
         for group in group_urls:
             try:
@@ -104,7 +110,7 @@ def send_latest_saved_message(client, group_urls):
             except Exception as e:
                 print(Fore.RED + f'[✘] Failed to send to {group}: {e}')
 
-        save_last_hash(new_hash)
+        log_post(msg.message or "<Media only>")
 
     except Exception as e:
         print(Fore.RED + f'[✘] Error getting saved message: {e}')
@@ -151,9 +157,9 @@ def main():
     while True:
         clear_screen()
         display_banner()
-        print(Fore.YELLOW + f'🔄 Forwarding latest saved message every {CYCLE_DELAY_MIN} minutes...\n')
+        print(Fore.YELLOW + f'🔄 Posting ad every {CYCLE_DELAY_MIN} minutes...\n')
         send_latest_saved_message(client, groups)
-        print(Fore.CYAN + f'\n⏳ Sleeping {CYCLE_DELAY_MIN} min...')
+        print(Fore.CYAN + f'\n⏳ Sleeping for {CYCLE_DELAY_MIN} minutes...')
         time.sleep(cycle_delay_sec)
 
 if __name__ == '__main__':
