@@ -1,5 +1,5 @@
 __pycache__/
 *.session
-groups.json
-ads.json
-cooldowns.json
+Credentials.txt
+Groups.txt
+sent.log
