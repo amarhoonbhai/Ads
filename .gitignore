@@ -2,4 +2,4 @@ __pycache__/
 *.session
 Credentials.txt
 Groups.txt
-sent.log
+last_hash.txt
