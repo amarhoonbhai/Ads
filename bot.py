@@ -2,12 +2,18 @@ import json
 import asyncio
 import time
 from telethon import TelegramClient, events
+from telethon.sessions import StringSession
 
-# === CONFIG ===
-api_id = 28464245  # 🔁 Replace with your API ID
-api_hash = '6fe23ca19e7c7870dc2aff57fb05c4d9'  # 🔁 Replace with your API hash
-session_name = 'User(id=7699253029, is_self=True, contact=False, mutual_contact=False, deleted=False, bot=True, bot_chat_history=False, bot_nochats=False, verified=False, restricted=False, min=False, bot_inline_geo=False, support=False, scam=False, apply_min_photo=True, fake=False, bot_attach_menu=False, premium=False, attach_menu_enabled=False, bot_can_edit=True, close_friend=False, stories_hidden=False, stories_unavailable=True, contact_require_premium=False, bot_business=False, bot_has_main_app=False, access_hash=-6512193603957157777, first_name='Spinify Mania', last_name=None, username='SpinifyBot', phone=None, photo=UserProfilePhoto(photo_id=6168103423023631237, dc_id=5, has_video=False, personal=False, stripped_thumb=None), status=None, bot_info_version=1, restriction_reason=[], bot_inline_placeholder=None, lang_code=None, emoji_status=None, usernames=[], stories_max_id=None, color=None, profile_color=None, bot_active_users=None, bot_verification_icon=None, send_paid_messages_stars=None)'  # Session file (e.g., user_session.session)
-owner_id = 7775062794  # 👑 Owner's Telegram user ID
+# === TELEGRAM API CREDENTIALS ===
+api_id = 28464245
+api_hash = '6fe23ca19e7c7870dc2aff57fb05c4d9'
+
+# === SESSION STRING ===
+# Generate it using a separate script, then paste it below:
+session_string = 'User(id=7699253029, is_self=True, contact=False, mutual_contact=False, deleted=False, bot=True, bot_chat_history=False, bot_nochats=False, verified=False, restricted=False, min=False, bot_inline_geo=False, support=False, scam=False, apply_min_photo=True, fake=False, bot_attach_menu=False, premium=False, attach_menu_enabled=False, bot_can_edit=True, close_friend=False, stories_hidden=False, stories_unavailable=True, contact_require_premium=False, bot_business=False, bot_has_main_app=False, access_hash=-6512193603957157777, first_name='Spinify Mania', last_name=None, username='SpinifyBot', phone=None, photo=UserProfilePhoto(photo_id=6168103423023631237, dc_id=5, has_video=False, personal=False, stripped_thumb=None), status=None, bot_info_version=1, restriction_reason=[], bot_inline_placeholder=None, lang_code=None, emoji_status=None, usernames=[], stories_max_id=None, color=None, profile_color=None, bot_active_users=None, bot_verification_icon=None, send_paid_messages_stars=None)'
+
+# === OWNER CONFIG ===
+owner_id = 7775062794  # 👑 Your Telegram user ID (bot owner)
 cooldown_minutes = 30
 post_delay_seconds = cooldown_minutes * 60
 
@@ -16,7 +22,7 @@ GROUPS_FILE = 'groups.json'
 ADS_FILE = 'ads.json'
 COOLDOWN_FILE = 'cooldowns.json'
 
-# === LOAD & SAVE UTILITIES ===
+# === LOAD & SAVE HELPERS ===
 def load_json(path, default):
     try:
         with open(path, 'r') as f:
@@ -28,15 +34,15 @@ def save_json(path, data):
     with open(path, 'w') as f:
         json.dump(data, f)
 
-# === INITIAL DATA LOAD ===
+# === INITIALIZE FILE DATA ===
 groups = load_json(GROUPS_FILE, [])
 ads = load_json(ADS_FILE, {})
 cooldowns = load_json(COOLDOWN_FILE, {})
 
-# === TELEGRAM CLIENT ===
-client = TelegramClient(session_name, api_id, api_hash)
+# === INIT TELEGRAM CLIENT ===
+client = TelegramClient(StringSession(session_string), api_id, api_hash)
 
-# === /submit ===
+# === /submit: Save and schedule ad ===
 @client.on(events.NewMessage(pattern='/submit'))
 async def submit_ad(event):
     sender = await event.get_sender()
@@ -65,16 +71,16 @@ async def submit_ad(event):
     await event.respond("✬ Your ad has been saved and will be auto-posted in *30 minutes*. ✬", parse_mode='Markdown')
     asyncio.create_task(schedule_post(user_id, ad_text))
 
-# === SCHEDULED POSTING ===
+# === SCHEDULE POST TO GROUPS ===
 async def schedule_post(user_id, ad_text):
     await asyncio.sleep(post_delay_seconds)
     for group_id in groups:
         try:
             await client.send_message(group_id, f"📣 *New Ad Submitted!*\n\n{ad_text}", parse_mode='Markdown')
         except Exception as e:
-            print(f"❌ Error posting to group {group_id}: {e}")
+            print(f"❌ Failed to post to group {group_id}: {e}")
 
-# === /status (owner only) ===
+# === /status: Check ad schedule (owner only) ===
 @client.on(events.NewMessage(pattern='/status'))
 async def check_status(event):
     sender = await event.get_sender()
@@ -109,7 +115,7 @@ async def check_status(event):
     else:
         await event.respond("❗ No posting schedule found.")
 
-# === /addgroup (owner only) ===
+# === /addgroup: Register current group (owner only) ===
 @client.on(events.NewMessage(pattern='/addgroup'))
 async def add_group(event):
     sender = await event.get_sender()
