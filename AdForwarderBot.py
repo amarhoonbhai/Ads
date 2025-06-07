@@ -1,140 +1,160 @@
-import json
-import asyncio
+from telethon.sync import TelegramClient
+from telethon.tl.functions.messages import GetHistoryRequest
+from colorama import init, Fore, Style
+import os
 import time
-from telethon import TelegramClient, events
-from telethon.sessions import StringSession
+import hashlib
 
-# === TELEGRAM API CREDENTIALS ===
-api_id = 28464245
-api_hash = '6fe23ca19e7c7870dc2aff57fb05c4d9'
+# === INIT COLOR TERMINAL ===
+init(autoreset=True)
 
-# === SESSION STRING ===
-# Generate it using a separate script, then paste it below:
-session_string = 'BQGIzloAxPTBDXhvGfhMF7CGFPcwuwhV7SlNbHHY5uJe8FPyvabZjifbn_Q6Euge_hcNGDfotxc6GgePlVqNlY5pXXMvA4rsGfy1auPkmX7_RFIRrQ0WhhFHMMINH7gUC64iW5VkK0QuLOkORifPlX0zSZ4JmUvMu_sOYZkIpdXl7hSmyKxQVOOq9jekEp3LpxTt16DH-DwBJMYAGqezlI602aWs6eXadNb3bfmCKsbxRwxOW5P-v_dB5a8VxDRR6PIaZSAkJhiqS73ckWPYKkUl1D_ahDwNTWKyBYDA9SwrALUIso8I48GVLj-pq9j2_SuRWKmzvRD3JCESljgI6J1YjTkVtQAAAAHPbgsKAA'
-# === OWNER CONFIG ===
-owner_id = 7775062794  # 👑 Your Telegram user ID (bot owner)
-cooldown_minutes = 30
-post_delay_seconds = cooldown_minutes * 60
+# === SETTINGS ===
+CYCLE_DELAY_MIN = 25        # Delay between ad rounds (in minutes)
+DELAY_BETWEEN_MSGS = 5      # Delay between each group send (in seconds)
+LAST_HASH_FILE = "last_hash.txt"
+GROUP_FILE = "Groups.txt"
+CRED_FILE = "Credentials.txt"
 
-# === FILE PATHS ===
-GROUPS_FILE = 'groups.json'
-ADS_FILE = 'ads.json'
-COOLDOWN_FILE = 'cooldowns.json'
+# === UTILS ===
+def clear_screen():
+    os.system('cls' if os.name == 'nt' else 'clear')
 
-# === LOAD & SAVE HELPERS ===
-def load_json(path, default):
+def display_banner():
+    print(Fore.CYAN + r"""
+           _                 _       
+     /\   | |               | |      
+    /  \  | | _____  __   __| |_   _ 
+   / /\ \ | |/ _ \ \/ /  / _` | | | |
+  / ____ \| |  __/>  <  | (_| | |_| |
+ /_/    \_\_|\___/_/\_\  \__,_|\__,_| 
+    """)
+    print(Style.RESET_ALL)
+    print(Fore.GREEN + "Auto Ad Forwarder Bot ✨\n")
+
+def check_and_create_files():
+    if not os.path.exists(CRED_FILE): open(CRED_FILE, 'w').close()
+    if not os.path.exists(GROUP_FILE): open(GROUP_FILE, 'w').close()
+
+def save_credentials(api_id, api_hash, phone):
+    with open(CRED_FILE, 'w') as f:
+        f.write(f'{api_id}\n{api_hash}\n{phone}')
+    print(Fore.GREEN + '[✔] Credentials saved.\n')
+
+def load_credentials():
+    if not os.path.exists(CRED_FILE): return None
+    with open(CRED_FILE, 'r') as f:
+        lines = f.readlines()
+    return (lines[0].strip(), lines[1].strip(), lines[2].strip()) if len(lines) >= 3 else None
+
+def load_group_urls():
+    if not os.path.exists(GROUP_FILE): return []
+    with open(GROUP_FILE, 'r') as f:
+        return [line.strip() for line in f if line.strip()]
+
+def get_message_hash(msg):
+    content = msg.message or ''
+    media_id = str(msg.media.document.id) if msg.media and hasattr(msg.media, 'document') else ''
+    combined = content + media_id
+    return hashlib.sha256(combined.encode()).hexdigest()
+
+def load_last_hash():
+    if os.path.exists(LAST_HASH_FILE):
+        with open(LAST_HASH_FILE, 'r') as f:
+            return f.read().strip()
+    return ''
+
+def save_last_hash(hash_value):
+    with open(LAST_HASH_FILE, 'w') as f:
+        f.write(hash_value)
+
+def send_latest_saved_message(client, group_urls):
     try:
-        with open(path, 'r') as f:
-            return json.load(f)
-    except FileNotFoundError:
-        return default
-
-def save_json(path, data):
-    with open(path, 'w') as f:
-        json.dump(data, f)
-
-# === INITIALIZE FILE DATA ===
-groups = load_json(GROUPS_FILE, [])
-ads = load_json(ADS_FILE, {})
-cooldowns = load_json(COOLDOWN_FILE, {})
-
-# === INIT TELEGRAM CLIENT ===
-client = TelegramClient(StringSession(session_string), api_id, api_hash)
-
-# === /submit: Save and schedule ad ===
-@client.on(events.NewMessage(pattern='/submit'))
-async def submit_ad(event):
-    sender = await event.get_sender()
-    user_id = str(sender.id)
-    now = time.time()
-
-    # Cooldown check
-    if user_id in cooldowns:
-        elapsed = now - cooldowns[user_id]
-        if elapsed < post_delay_seconds:
-            remaining = int((post_delay_seconds - elapsed) / 60)
-            await event.respond(f"⏳ Please wait {remaining} more minute(s) before submitting again.")
+        history = client(GetHistoryRequest(
+            peer='me',
+            offset_id=0,
+            offset_date=None,
+            add_offset=0,
+            limit=1,
+            max_id=0,
+            min_id=0,
+            hash=0
+        ))
+        if not history.messages:
+            print(Fore.RED + '[✘] No messages found in Saved Messages.')
             return
 
-    parts = event.raw_text.split(' ', 1)
-    if len(parts) < 2:
-        await event.respond("❗ Usage:\n`/submit Your ad text here...`", parse_mode='Markdown')
-        return
+        msg = history.messages[0]
+        new_hash = get_message_hash(msg)
+        last_hash = load_last_hash()
 
-    ad_text = parts[1]
-    ads[user_id] = ad_text
-    cooldowns[user_id] = now
-    save_json(ADS_FILE, ads)
-    save_json(COOLDOWN_FILE, cooldowns)
-
-    await event.respond("✬ Your ad has been saved and will be auto-posted in *30 minutes*. ✬", parse_mode='Markdown')
-    asyncio.create_task(schedule_post(user_id, ad_text))
-
-# === SCHEDULE POST TO GROUPS ===
-async def schedule_post(user_id, ad_text):
-    await asyncio.sleep(post_delay_seconds)
-    for group_id in groups:
-        try:
-            await client.send_message(group_id, f"📣 *New Ad Submitted!*\n\n{ad_text}", parse_mode='Markdown')
-        except Exception as e:
-            print(f"❌ Failed to post to group {group_id}: {e}")
-
-# === /status: Check ad schedule (owner only) ===
-@client.on(events.NewMessage(pattern='/status'))
-async def check_status(event):
-    sender = await event.get_sender()
-    if sender.id != owner_id:
-        await event.respond("🚫 This command is restricted to the bot owner.")
-        return
-
-    user_id = str(sender.id)
-    ad_text = ads.get(user_id)
-    if not ad_text:
-        await event.respond("ℹ️ You don't have a saved ad yet.")
-        return
-
-    last_submit = cooldowns.get(user_id)
-    if last_submit:
-        now = time.time()
-        elapsed = now - last_submit
-        remaining = post_delay_seconds - elapsed
-
-        if remaining > 0:
-            mins = int(remaining // 60)
-            secs = int(remaining % 60)
-            await event.respond(
-                f"📝 *Your Ad:*\n{ad_text}\n\n⏳ *Time Left:* {mins}m {secs}s",
-                parse_mode='Markdown'
-            )
+        if new_hash == last_hash:
+            print(Fore.YELLOW + '[!] Skipping — no new message since last post.\n')
+            return
         else:
-            await event.respond(
-                f"📝 *Your Ad:*\n{ad_text}\n\n✅ *Status:* Already Posted.",
-                parse_mode='Markdown'
-            )
-    else:
-        await event.respond("❗ No posting schedule found.")
+            print(Fore.GREEN + '[✔] New message found — sending to groups...\n')
 
-# === /addgroup: Register current group (owner only) ===
-@client.on(events.NewMessage(pattern='/addgroup'))
-async def add_group(event):
-    sender = await event.get_sender()
-    if sender.id != owner_id:
-        await event.respond("🚫 Only the bot owner can use this command.")
+        for group in group_urls:
+            try:
+                if msg.media:
+                    client.send_file(group, msg.media, caption=msg.message or "")
+                else:
+                    client.send_message(group, msg.message)
+                print(Fore.GREEN + f'[➤] Sent to {group}')
+                time.sleep(DELAY_BETWEEN_MSGS)
+            except Exception as e:
+                print(Fore.RED + f'[✘] Failed to send to {group}: {e}')
+
+        save_last_hash(new_hash)
+
+    except Exception as e:
+        print(Fore.RED + f'[✘] Error getting saved message: {e}')
+
+def main():
+    clear_screen()
+    display_banner()
+    check_and_create_files()
+
+    creds = load_credentials()
+    if creds:
+        reuse = input(Fore.YELLOW + '[?] Reuse last account? (yes/no): ').strip().lower()
+        if reuse == 'yes':
+            api_id, api_hash, phone = creds
+        else:
+            api_id = input(Fore.YELLOW + 'API ID: ')
+            api_hash = input(Fore.YELLOW + 'API HASH: ')
+            phone = input(Fore.YELLOW + 'Phone number (with country code): ')
+            save_credentials(api_id, api_hash, phone)
+    else:
+        api_id = input(Fore.YELLOW + 'API ID: ')
+        api_hash = input(Fore.YELLOW + 'API HASH: ')
+        phone = input(Fore.YELLOW + 'Phone number (with country code): ')
+        save_credentials(api_id, api_hash, phone)
+
+    session_file = f'{phone}.session'
+    client = TelegramClient(session_file, api_id, api_hash)
+
+    client.connect()
+    if not client.is_user_authorized():
+        client.send_code_request(phone)
+        code = input(Fore.RED + 'Enter the code sent to Telegram: ')
+        client.sign_in(phone=phone, code=code)
+    else:
+        print(Fore.GREEN + '[✔] Logged in.\n')
+
+    groups = load_group_urls()
+    if not groups:
+        print(Fore.RED + '[!] No group URLs found in Groups.txt. Please add and restart.')
         return
 
-    chat = await event.get_chat()
-    if chat.id not in groups:
-        groups.append(chat.id)
-        save_json(GROUPS_FILE, groups)
-        await event.respond("✅ This group has been added for ad posting.")
-    else:
-        await event.respond("ℹ️ This group is already registered.")
+    cycle_delay_sec = CYCLE_DELAY_MIN * 60
 
-# === START BOT ===
-async def main():
-    await client.start()
-    print("🤖 Ad bot is up and running.")
-    await client.run_until_disconnected()
+    while True:
+        clear_screen()
+        display_banner()
+        print(Fore.YELLOW + f'🔄 Forwarding latest saved message every {CYCLE_DELAY_MIN} minutes...\n')
+        send_latest_saved_message(client, groups)
+        print(Fore.CYAN + f'\n⏳ Sleeping {CYCLE_DELAY_MIN} min...')
+        time.sleep(cycle_delay_sec)
 
-if __name__ == "__main__":
-    asyncio.run(main())
+if __name__ == '__main__':
+    main()
