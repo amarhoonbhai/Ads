@@ -10,8 +10,7 @@ api_hash = '6fe23ca19e7c7870dc2aff57fb05c4d9'
 
 # === SESSION STRING ===
 # Generate it using a separate script, then paste it below:
-session_string = 'User(id=7699253029, is_self=True, contact=False, mutual_contact=False, deleted=False, bot=True, bot_chat_history=False, bot_nochats=False, verified=False, restricted=False, min=False, bot_inline_geo=False, support=False, scam=False, apply_min_photo=True, fake=False, bot_attach_menu=False, premium=False, attach_menu_enabled=False, bot_can_edit=True, close_friend=False, stories_hidden=False, stories_unavailable=True, contact_require_premium=False, bot_business=False, bot_has_main_app=False, access_hash=-6512193603957157777, first_name='Spinify Mania', last_name=None, username='SpinifyBot', phone=None, photo=UserProfilePhoto(photo_id=6168103423023631237, dc_id=5, has_video=False, personal=False, stripped_thumb=None), status=None, bot_info_version=1, restriction_reason=[], bot_inline_placeholder=None, lang_code=None, emoji_status=None, usernames=[], stories_max_id=None, color=None, profile_color=None, bot_active_users=None, bot_verification_icon=None, send_paid_messages_stars=None)'
-
+session_string = 'BQGIzloAxPTBDXhvGfhMF7CGFPcwuwhV7SlNbHHY5uJe8FPyvabZjifbn_Q6Euge_hcNGDfotxc6GgePlVqNlY5pXXMvA4rsGfy1auPkmX7_RFIRrQ0WhhFHMMINH7gUC64iW5VkK0QuLOkORifPlX0zSZ4JmUvMu_sOYZkIpdXl7hSmyKxQVOOq9jekEp3LpxTt16DH-DwBJMYAGqezlI602aWs6eXadNb3bfmCKsbxRwxOW5P-v_dB5a8VxDRR6PIaZSAkJhiqS73ckWPYKkUl1D_ahDwNTWKyBYDA9SwrALUIso8I48GVLj-pq9j2_SuRWKmzvRD3JCESljgI6J1YjTkVtQAAAAHPbgsKAA'
 # === OWNER CONFIG ===
 owner_id = 7775062794  # 👑 Your Telegram user ID (bot owner)
 cooldown_minutes = 30
