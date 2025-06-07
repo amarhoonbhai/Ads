@@ -1,0 +1,5 @@
+__pycache__/
+*.session
+groups.json
+ads.json
+cooldowns.json
