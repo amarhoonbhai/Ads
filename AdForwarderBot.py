@@ -11,7 +11,7 @@ from colorama import init, Fore, Style
 init(autoreset=True)
 
 # Configurable settings
-CYCLE_DELAY_MIN = 25
+CYCLE_DELAY_MIN = 15
 DELAY_BETWEEN_MSGS = 5
 LAST_HASH_FILE = "last_hash.txt"
 GROUP_FILE = "Groups.txt"
